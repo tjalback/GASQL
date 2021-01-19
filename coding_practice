@@ -1,0 +1,105 @@
+-- queries on superstore Database 19/1/2021
+SELECT product_name 
+FROM products
+WHERE product_name ILIKE '%XEROX%';
+
+SELECT COUNT(country) 
+FROM regions
+WHERE sub_region ILIKE '%WESTERN EUROPE%';
+
+
+SELECT COUNT(distinct customer_name)
+FROM customers
+WHERE segment ILIKE '%consumer%' AND customer_name ILIKE 'S%'
+-- if distinct removed it's all names, distinct count of unique cust names;
+
+
+SELECT SUM(return_quantity)
+FROM returns
+WHERE reason_returned NOT ILIKE '%not given%';
+
+
+SELECT COUNT(*)  
+FROM orders 
+WHERE ship_mode ILIKE '%standard%' AND discount > 0;
+
+-- need comma after columns because CASE is generating a new column
+-- note here, the case runs line by line. If you have same numbers for conditions, it will return the first condition met eg. 0.25 
+SELECT discount, 'trev' as TREV,  
+	CASE 
+		WHEN discount >= 0.25 AND discount <= 0.99 THEN 'high'
+		WHEN discount >= 0.1 AND discount <= 0.25 THEN 'low'
+		WHEN discount > 1 THEN 'free'
+		ELSE 'none'
+	END AS discount_grouping
+FROM orders
+
+SELECT regions.region_id, country, salesperson, ship_mode
+FROM regions
+INNER JOIN orders ON regions.region_id = orders.region_id
+
+SELECT products.product_id, sales, category
+FROM products
+INNER JOIN orders ON products.product_id = orders.product_id
+
+SELECT return_date, ship_date
+FROM returns
+INNER JOIN orders ON returns.order_id = orders.order_id
+
+SELECT return_date, country_code
+FROM returns
+INNER JOIN orders ON returns.order_id = orders.order_id
+INNER JOIN regions ON orders.region_id = regions.region_id
+-- to join two tables where they don't have a common column, you need to find a link through other tables that have  
+
+
+SELECT profit,
+	CASE
+		WHEN profit > 0 THEN 'positive'
+		WHEN profit < 0 THEN 'negative'
+		ELSE 'break even'
+		END AS profit_grouping
+FROM orders
+
+SELECT discount, 
+       AVG(quantity) AS quantity, 
+	   AVG(sales) as avg_sales
+FROM orders
+WHERE discount > 0.15
+GROUP BY discount
+HAVING AVG(sales) > 500
+ORDER BY 3 DESC
+-- 3 here means order by third column (sales)
+
+
+SELECT category, count(*) AS count_of_products
+FROM products
+WHERE product_name ILIKE '%computer%' OR product_name ILIKE '%color%'
+GROUP BY category
+HAVING count(*) >= 100 
+ORDER BY count_of_products DESC
+LIMIT 10
+-- in postgres need to use aggregate function as column name (not alias) in Having clause
+
+SELECT 
+	CASE 
+		WHEN profit > 0 THEN 'Positive'
+		ELSE 'Negative' 
+	END AS profit_level,
+COUNT(*) AS num_orders
+FROM ORDERS
+GROUP BY profit_level
+-- note here you count the groups on the conditions you've set. Need ,  after CASE column and need to GROUP BY non aggregate column
+
+SELECT return_date
+FROM returns
+--49725
+
+SELECT order_date
+FROM orders
+-- 999991
+
+SELECT r.return_date, o.order_date
+FROM returns AS r
+INNER JOIN orders AS o ON r.order_id = o.order_id
+-- 51250
