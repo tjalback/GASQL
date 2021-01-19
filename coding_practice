@@ -1,3 +1,5 @@
+-- GA DAY 2 SQL + comments 
+
 -- queries on superstore Database 19/1/2021
 SELECT product_name 
 FROM products
