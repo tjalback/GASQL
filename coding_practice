@@ -105,3 +105,75 @@ SELECT r.return_date, o.order_date
 FROM returns AS r
 INNER JOIN orders AS o ON r.order_id = o.order_id
 -- 51250
+
+-- using DB browser SQLite
+
+--Inner join add all rows with common value in joining column
+SELECT * 
+FROM people
+
+SELECT * 
+FROM vehicles
+
+SELECT *
+FROM people as p
+INNER JOIN vehicles as v
+	ON p.vehicle_id = v.id
+
+-- left outer keeps all rows in left table, and adds rows from second table if common value in joining column
+SELECT * 
+FROM people
+
+SELECT * 
+FROM vehicles
+
+SELECT *
+FROM vehicles as v
+LEFT OUTER JOIN people as p
+	ON p.vehicle_id = v.id
+
+-- back to superstore DB on PGADMIN
+SELECT o.order_id, c.customer_name, r.reason_returned
+FROM customers as c
+INNER JOIN orders as o ON c.customer_id = o.customer_id
+INNER JOIN returns as r ON r.order_id = o.order_id
+LIMIT 100
+
+SELECT 	
+	o.order_id, 
+	o.order_date, 
+	o.ship_date, 
+	r.return_date
+FROM orders as o
+LEFT OUTER JOIN returns as r 
+	ON o.order_id = r.order_id
+ORDER BY r.return_date DESC
+-- see nulls here for orders without return dates (left outer join)
+
+-- Unions stack rows on rows, using 'UNION ALL' returns all rows, 'UNION' returns distinct rows
+SELECT 
+	region, 
+	sub_region
+FROM regions
+WHERE sub_region = 'Central United States'
+
+UNION ALL
+
+SELECT 
+	region,
+	sub_region
+FROM regions
+WHERE sub_region = 'Caribbean'
+
+-- Homework question Day 3, not sure what the joins are doing
+SELECT 
+	reg.salesperson,
+	COUNT(reg.salesperson),
+	r.reason_returned
+FROM regions reg 
+LEFT OUTER JOIN orders o ON o.region_id = reg.region_id
+LEFT OUTER JOIN returns r ON r.order_id = o.order_id
+GROUP BY reg.salesperson, r.reason_returned
+ORDER BY COUNT(reg.salesperson) DESC
+-- we want all the salespeople so start with this in regions table
+-- LEFT JOINs will keep all rows of that first table and add matching rows from orders and then returns
