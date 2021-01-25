@@ -1,0 +1,165 @@
+SELECT 
+	o.product_id,
+	r.reason_returned
+FROM returns AS r
+LEFT JOIN orders AS o
+	ON o.order_id = r.order_id
+WHERE r.reason_returned = 'Not Given'
+-- if you swap orders and returns, you can get the same result using 'right join'. You need to know what you are looking for (here product info on ALL returns)
+
+-- Except below; what's it doing?
+SELECT product_id, product_name
+FROM products
+WHERE category = 'Furniture'
+EXCEPT
+SELECT product_id, customer_id
+FROM orders
+WHERE DATE_PART('year', order_date) = '2020';
+-- NOTE: the product_name and customer_id are both text fields so this works BUT these columns are different SO we actually get all rows returned
+
+SELECT product_id FROM products WHERE category = 'Furniture'
+EXCEPT
+SELECT product_id FROM orders WHERE DATE_PART('year', order_date) = '2020';
+-- whereas here, we remove product_name and customer_id, and we are subtracting the second query from the first on product_id column
+-- the second table - the first table based on the product_id's in both tables. The except gives us all the ones that don't match. 
+-- This gives us: furniture that was NOT sold in 2020.
+
+SELECT a.product_id, b.reason_returned
+FROM orders AS a
+LEFT JOIN returns AS b
+USING(order_id)
+WHERE b.reason_returned is NULL
+-- All orders returned then matching order_id's from returns added. We then filter using where nulls on a column from returns to only show NULLS. Meaning we get the pacman venn
+-- This is like an exception because the Nulls after the join are being shown
+
+SELECT reg.salesperson, COUNT(o.sales) AS num_sales
+FROM orders as o
+INNER JOIN regions as reg
+ON reg.region_id = o.region_id
+-- we want regions added to orders because it will show us all the orders by people. Why? because regions table has a salesperson
+LEFT JOIN returns as ret
+ON o.order_id = ret.order_id
+-- here we want all the orders, whether or not they were returned so we use LEFT JOIN
+WHERE ret.order_id IS NULL
+-- the where IS NULL turns the left join into a PACMAN
+GROUP BY reg.salesperson
+ORDER BY num_sales DESC
+
+SELECT
+  product_id, 
+  quantity/NULLIF(discount,0) AS discount_per_item
+FROM orders
+WHERE ship_mode = 'Standard Class';
+-- use NULLIF where you need to divide by a column and there might be a 0 present. It will change it to a NULL
+
+-- OR this is the same, but using CASE
+SELECT product_id, 
+	CASE 
+		WHEN discount = 0 THEN NULL
+		WHEN discount > 0 THEN quantity/discount 
+		END AS discount_per_item
+FROM orders
+WHERE ship_mode = 'Standard Class';
+
+SELECT order_id, product_id, sales, 
+COALESCE(postal_code, 'carol') 
+AS coalesced FROM orders;
+-- this replaces nulls in postal_code with 'carol'
+
+SELECT order_date, DATE_PART('Year', order_date)
+FROM orders
+-- extracts the year part from a timestamp, can also do with month etc, check postgres documentation
+
+SELECT order_date, DATE_PART('Year', order_date) = 2020
+FROM orders
+WHERE DATE_PART('Year', order_date) = 2020
+-- This will give the Boolean operation, checking if 2020 is present in the timestamp and returning T/F
+
+SELECT DISTINCT customers.customer_id, customer_name, segment
+FROM customers
+LEFT JOIN orders
+	using(customer_id)
+WHERE DATE_PART('year', order_date) = 2020
+
+-- Independent practice (Day 1 week 2)
+
+-- Q1
+SELECT order_id
+FROM orders
+	INNER JOIN customers
+	USING(customer_id)
+WHERE segment = 'Consumer'
+LIMIT 1000
+
+-- Q2
+SELECT order_id, product_name
+FROM products
+	INNER JOIN orders
+	USING(product_id)
+WHERE product_name ILIKE '%Photo Frame%'
+
+-- Q3
+SELECT product_name 
+FROM products
+LEFT JOIN orders
+USING(product_id)
+WHERE product_name ILIKE '%Photo Frame%' AND order_id IS NULL
+-- answer is no rows
+
+-- Q4
+SELECT DISTINCT(product_id), country
+FROM orders
+LEFT OUTER JOIN regions 
+USING(region_id)
+WHERE country ILIKE '%France%'
+-- answer is 9412 products
+
+--Q4 answer 2
+SELECT DISTINCT product_name, country
+FROM products
+INNER JOIN orders
+USING(product_id)
+INNER JOIN regions
+USING(region_id)
+WHERE country ILIKE '%France%'
+-- 3587 - also correct but on distinct product_name not product_id
+
+-- Q5 
+SELECT DISTINCT product_id, country
+FROM orders
+INNER JOIN products
+USING(product_id)
+INNER JOIN regions
+USING(region_id)
+WHERE country ILIKE '%United States%' and product_name ILIKE '%Recycled%' 
+-- 403 rows
+
+-- Q5 answer 2
+SELECT DISTINCT product_name, country
+FROM orders
+INNER JOIN regions
+USING(region_id)
+INNER JOIN products
+USING(product_id)
+WHERE country ILIKE '%United States%' and product_name ILIKE '%Recycled%' 
+-- 118 rows
+
+-- Q6 
+SELECT DISTINCT product_id
+FROM orders
+INNER JOIN regions
+USING(region_id)
+INNER JOIN products
+USING(product_id)
+WHERE product_name NOT ILIKE '%Photo Frame%' AND country ILIKE '%Canada%'
+--4671 result (not the same as given answer of 79)
+
+--Q7
+SELECT product_name from products
+EXCEPT
+SELECT order_id FROM orders
+
+--Q8 
+SELECT region_id FROM orders
+EXCEPT
+SELECT region_id FROM regions
