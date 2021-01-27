@@ -430,4 +430,20 @@ FROM orders
 LIMIT 50
 -- reverse the string, often used as a way to quickly de-identify but keep id information (just reversed)
 
+-- Independent practice
+-- Q1 
+-- count or orders returned in 2019 by country. Limit to top 5 by count of returns. Include avg profit for returned orders
+
+SELECT country, COUNT(orders.order_id) AS count_orders
+FROM orders
+INNER JOIN returns 
+USING(order_id)
+INNER JOIN regions
+USING(region_id)
+WHERE order_id IN(SELECT order_id FROM returns
+				 WHERE DATE_PART('year',return_date)='2019')
+GROUP BY country
+ORDER BY count_orders DESC
+LIMIT 5
+
 
