@@ -319,3 +319,115 @@ WHERE (CAST(quantity AS INTEGER) * CAST(product_cost_to_consumer AS INTEGER)
 
 -- Now we have defined our temp tables to use (t1_cte etc), we can more simply use those 'shortcut' tables in our SELECT query
 -- i.e. we don't have to know the details of new defined temp tables,we simply use a CTE shortcut 
+
+SELECT sales, sales * 2 AS lets_report_double_and_get_a_bonus
+FROM orders
+LIMIT 10
+-- arithmetic operator 
+
+SELECT sales, sales > 20
+FROM orders
+LIMIT 10
+-- relational operator (giving T/F/unknown) Boolean
+
+SELECT sales, sales BETWEEN 70 AND 80 AS more_than
+FROM orders
+LIMIT 10
+-- Logical operator
+
+SELECT SUM(sales) + SUM(profit) +5 AS calc_weird
+FROM orders
+-- sometimes you can't sum columns directly, here we use aggregate function on a column and add then separately
+
+SELECT ROUND(sales, 1) AS rounded_sales, sales
+FROM orders
+WHERE ROUND(sales, 1) = 78.4
+-- Can round the sales to 1 (or any) decimal point here, can then use a where to filter on that rounded column
+
+SELECT sales, 5, 5/2, 5.0/2.0, 5.0/2, 5/2.0
+FROM orders
+LIMIT 10
+-- note data type important in calcs
+
+SELECT sales, CAST(sales AS int) AS int_sales, CAST(SUM(sales) AS int)
+FROM orders
+GROUP BY sales, int_sales
+-- CAST changes data type, need parameters --> the column AS the new type
+
+SELECT sales, sales::integer, CAST(sales AS int) AS int_sales, CAST(SUM(sales) AS int)
+FROM orders
+GROUP BY sales, int_sales
+-- can use shorthand :: for cast
+-- NOTE CAST is different accross DBs - using :: may trunc or cast/round etc, so need to check if important
+
+SELECT return_quantity, return_quantity::numeric AS returns_as_num, ROUND(CAST(return_quantity AS numeric)+3.7,0) AS bonus_returns
+FROM returns
+-- can do different things with CAST, here the 3rd column is numeric type but rounded as a whole number (i.e. not int)
+
+
+-- TEXT strings
+SELECT customer_name, CONCAT(segment, '_', customer_name)
+FROM customers
+-- join text's together 
+
+SELECT customer_name, LENGTH(customer_name)
+FROM customers
+-- get length of string (number characters including spaces)
+
+SELECT customer_name, REPLACE(customer_name, 'Allen', 'Alan') AS new_cust_name
+FROM customers
+-- replace Allen with Alan
+
+SELECT customer_name, UPPER(customer_name), LOWER(customer_name)
+FROM customers
+-- change case of text string
+
+SELECT customer_name 
+FROM customers
+WHERE LOWER(customer_name) like '%alex%'
+-- use this if no ILIKE (ILIKE only in Postgres) to search without case sensitive 
+
+SELECT SUBSTRING(customer_id, 4, 20) AS extract_id, customer_id
+FROM customers
+-- starting from first index (4) and giving number of chars (20)
+
+SELECT SUBSTRING(customer_id, 4, 20)::int AS extract_id, customer_id
+FROM customers
+-- use substring to do same, but change to numeric --> can now do maths!
+
+SELECT customer_name,
+	LEFT(customer_name, 2) AS first_2_char, -- start reading from the left, 2 char
+	RIGHT(customer_name, 3) AS last_3_char -- start reading from the right, 3 char
+FROM customers
+-- get first or last chars
+
+SELECT customer_name,
+	LEFT(customer_name, 2) AS first_2_char, -- start reading from the left, 2 char
+	RIGHT(customer_name, 3) AS last_3_char -- start reading from the right, 3 char
+FROM customers
+WHERE LOWER(LEFT(customer_id, 3)) like 'aa-%'  
+-- or add as a lovely filter for id's starting with ___
+
+SELECT customer_name, TRIM(leading 'AA' FROM customer_id)
+FROM customers
+-- This removes the 'AA' from the beginning of the id (can also use 'trailing' for end, and 'both' from both ends)
+-- Trim also used to remove spaces (only from ends)
+
+SELECT customer_name, STRPOS('Andrew', 'drew')
+FROM customers
+WHERE customer_name LIKE '%Andrew%'
+-- STRPOS gives us the start position of 'drew' in 'Andrew' 
+
+SELECT customer_name, STRPOS('Andrew', customer_name),
+		substring(customer_name, STRPOS('Andrew', customer_name), 20)		
+FROM customers
+WHERE customer_name LIKE '%Andrew%'
+-- Here we find out where 'Andrew' starts in customer_name
+-- Can use this within a substring to extract based on a start position
+
+SELECT order_id, REVERSE(order_id)
+FROM orders
+LIMIT 50
+-- reverse the string, often used as a way to quickly de-identify but keep id information (just reversed)
+
+
