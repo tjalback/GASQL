@@ -252,3 +252,18 @@ GROUP BY 1
 ORDER BY 2 DESC;
 -- Remember, sub query is giving the sum of sales for each of the categories (we have defined). 
 -- This one takes each category total and divides by the sum of all sales to give a % or each category 
+
+SELECT 	profit_size, 
+		COUNT(*) AS number_orders 
+FROM 
+	(SELECT order_id, profit, 
+	CASE
+		WHEN CAST(profit AS int) >= 1000 THEN 'large'
+		WHEN CAST(profit AS int) >= 50 THEN 'medium'
+		ELSE 'small'
+		END AS profit_size 
+		FROM orders) 
+	AS temp
+GROUP BY profit_size
+
+
