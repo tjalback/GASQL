@@ -266,4 +266,56 @@ FROM
 	AS temp
 GROUP BY profit_size
 
+SELECT product_id, ROUND(AVG(over_25), 4) AS pct_over_25
+FROM (SELECT product_id, profit,
+CASE WHEN CAST(discount AS float) > 0.25 THEN 1
+ELSE 0
+END AS over_25
+FROM orders) AS temp
+GROUP BY product_id
+ORDER BY product_id
+LIMIT 100;
+-- We can categorise by 1 and 0, then take the average of these 1, 0s to see % of products that have discount over 0.25 
 
+WITH 
+	cte_tab1 (product_id, over_25) 
+	AS 
+	(SELECT product_id,
+		CASE
+			WHEN CAST(discount AS float) > 0.25 THEN 1
+			ELSE 0
+			END AS over_25
+		FROM orders)
+
+SELECT product_id, ROUND(AVG(over_25), 4) AS pct_over_25
+FROM cte_tab1
+GROUP BY product_id
+ORDER BY product_id
+LIMIT 100;
+-- we can use CTE's to create a temp table instead of always writing our a sub-query
+-- This gives same result as above
+
+-- A more complex example, but see that three temp tables are being created t1_cte, t2_cte, t3_cte
+WITH 
+ t1_cte (order_year, quantity, discount, product_id, customer_id) AS ( 
+  SELECT EXTRACT(YEAR FROM order_date) AS order_year, quantity, 
+  discount, product_id, customer_id FROM orders),
+ t2_cte (product_description, product_cost_to_consumer, product_id) AS (
+  SELECT (sub_category || ', ' || product_name) AS product_description, 
+  product_cost_to_consumer, product_id FROM products),
+ t3_cte (customer_description, customer_id) AS (
+  SELECT (segment || ': ' || customer_name) AS customer_description, 
+  customer_id FROM customers)
+ -- These CTE's are temporary tables, the first columns names are defined by the select statement after the 'AS' 
+ 
+SELECT customer_description, product_description, order_year, 
+ (CAST(quantity AS INTEGER) * CAST(product_cost_to_consumer AS INTEGER) 
+  * (1 - CAST(discount AS NUMERIC))) AS estimated_profit 
+FROM t1_cte AS t1
+INNER JOIN t2_cte AS t2 ON t1.product_id = t2.product_id
+INNER JOIN t3_cte AS t3 ON t1.customer_id = t3.customer_id 
+WHERE (CAST(quantity AS INTEGER) * CAST(product_cost_to_consumer AS INTEGER) 
+  * (1 - CAST(discount AS NUMERIC))) < 100
+
+-- Now we have defined our temp tables to use (t1_cte etc), we can more simply use those 'shortcut' tables in our SELECT query
+-- i.e. we don't have to know the details of new defined temp tables,we simply use a CTE shortcut 
