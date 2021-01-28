@@ -446,4 +446,153 @@ GROUP BY country
 ORDER BY count_orders DESC
 LIMIT 5
 
+--Q2
+SELECT 
+	product_id, product_freq
+FROM
+	(SELECT 
+		CASE
+	 	WHEN COUNT(product_id) BETWEEN 150 AND 1000 THEN 'high'
+	 	WHEN COUNT(product_id) BETWEEN 150 AND 50 THEN 'medium'
+	 	WHEN COUNT(product_id) BETWEEN 5 AND 0 THEN 'very low'
+	 	ELSE 'other'
+	 	END AS product_freq
+	 	FROM orders
+		) AS temp
+	
+FROM products
+INNER JOIN orders
+USING(product_id)
+GROUP BY 
+ORDER BY 
 
+-- DATE FUNCTIONS
+SELECT CURRENT_DATE
+SELECT CURRENT_TIME
+
+SELECT order_date, CURRENT_DATE, (CURRENT_DATE-order_date) AS time_to_current
+FROM orders
+-- NOTE: the current_date is the system date i.e. here the date of the server NOT my time
+
+SELECT TO_DATE
+-- converts text string to date according to the format you give
+
+SELECT order_date, TO_DATE('05 DEC 2000', 'DD Mon YYYY'), '2000-12-05'::date
+FROM orders
+LIMIT 10
+-- some different ways to change text string to date type
+SELECT order_date, TO_DATE('05 DECEMBER 2000', 'DD Month YYYY'), '2000-12-05'::date
+FROM orders
+LIMIT 10
+
+SELECT AGE(order_date)
+FROM orders
+
+SELECT AGE('2017-01-01', '2011-06-24')
+-- here we aren't calling a traditional FROM table - but we give two data points
+
+SELECT order_date, ship_date, AGE(ship_date, order_date) AS days_to_ship
+FROM orders
+LIMIT 10
+
+SELECT DATE_PART('year', order_date), DATE_PART('century', order_date)
+FROM orders
+
+SELECT TO_CHAR(order_date, 'HH:MI:SS')
+FROM orders
+SELECT TO_CHAR(order_date, 'D')
+FROM orders
+-- date to string (may be useful if creating a CSV for excel)
+-- also not just for dates
+
+SELECT EXTRACT(hour FROM order_date)
+FROM orders
+SELECT EXTRACT(year FROM order_date)
+FROM orders
+SELECT EXTRACT(day FROM order_date)
+FROM orders
+-- extract the given timestamp subfield, hour, year etc)
+-- DATE_PART is the same as EXTRACT, but DATE_PART common in postgres
+
+SELECT DATE_TRUNC('month', order_date)
+FROM orders
+-- truncates the timestamp at specified precision, 'hour', 'year' etc
+
+SELECT order_date, ship_date
+FROM orders
+
+SELECT ship_date - order_date AS time_order_to_ship
+FROM orders
+
+-- CTE example below
+
+-- SELECT 
+-- 	ROUND(SUM(sales),0) AS total_sales, 
+-- 	AVG(sales)::INT AS avg_sales, 
+-- 	ROUND(MAX(sales),0) AS max_sale, 
+-- 	COUNT(sales) AS count_sales, 
+-- 	customer_id,
+-- 	order_date
+-- FROM orders
+-- WHERE DATE_PART('month', order_date) = 12
+-- GROUP BY customer_id, order_date
+-- ORDER BY total_sales DESC
+
+-- SELECT 
+-- 	ROUND(SUM(sales), 0) AS total_sales, 
+-- 	AVG(sales)::INT AS avg_sales, 
+-- 	MAX(sales) AS max_sales, 
+-- 	COUNT(sales) AS count_sales, 
+-- 	customer_id
+-- 	FROM orders
+-- 	GROUP BY customer_id
+-- 	ORDER BY total_sales DESC
+
+-- SELECT UPPER(customer_id), UPPER(customer_name) FROM customers
+
+-- select
+-- 	customer_id, order_date,
+-- 	sum(sales) as total_sales,
+-- 	avg(sales)::int as avg_sales,
+-- 	max(sales) as max_sales,
+-- 	count(sales) as count_sales
+-- 	from orders
+-- 	where extract('month' from order_date) = 12
+-- 	group by customer_id,order_date
+-- 	order by total_sales desc
+
+-- commented out original queries above
+
+WITH
+t1_cte (total_sales, avg_sales, max_sales, count_sales, customer_id) AS (SELECT 
+	ROUND(SUM(sales), 0) AS total_sales, 
+	AVG(sales)::INT AS avg_sales, 
+	MAX(sales) AS max_sales, 
+	COUNT(sales) AS count_sales, 
+	customer_id
+	FROM orders
+	GROUP BY customer_id
+	ORDER BY total_sales DESC),
+
+upper_cust (upper_cust_id, upper_cust_name) AS (SELECT UPPER(customer_id), UPPER(customer_name) FROM customers),
+
+sales_dec_data (customer_id, order_date, total_sales, avg_sales, max_sales, count_sales) AS 
+	(select
+	customer_id, order_date,
+	sum(sales) as total_sales,
+	avg(sales)::int as avg_sales,
+	max(sales) as max_sales,
+	count(sales) as count_sales
+	from orders
+	where extract('month' from order_date) = 12
+	group by customer_id,order_date
+	order by total_sales desc)
+
+SELECT upper_cust_name, total_sales, avg_sales, max_sales
+FROM upper_cust
+INNER JOIN sales_dec_data
+ON upper_cust.upper_cust_id = sales_dec_data.customer_id
+
+-- NOTE:we've created queries and (temp) saved them as CTE tables. We can query them for another SELECT
+-- The join is ON different column names, if customer_id was in both tables we could use USING with common name
+-- HERE we have aggregated data in one CTE (in count, max etc) and we join it with non-aggregated data (cust_name) in table 2 CTE 
