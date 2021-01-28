@@ -596,3 +596,111 @@ ON upper_cust.upper_cust_id = sales_dec_data.customer_id
 -- NOTE:we've created queries and (temp) saved them as CTE tables. We can query them for another SELECT
 -- The join is ON different column names, if customer_id was in both tables we could use USING with common name
 -- HERE we have aggregated data in one CTE (in count, max etc) and we join it with non-aggregated data (cust_name) in table 2 CTE 
+
+-- WITH DB BROWSER 
+WITH
+emp (employee_id, employee_name, manager_id, department_name) AS (SELECT * FROM employees),
+emp_count (department_name, emp_department) AS (SELECT department_name, COUNT(employee_id) AS emp_department FROM employees GROUP BY department_name)
+
+SELECT * FROM emp 
+JOIN emp_count
+USING(department_name)
+-- we display table 2 with department_name and use THIS to join the tables, not employee_id)
+
+select *,
+			 count(*) over ( PARTITION BY  department_name) as by_department,
+			 count(*) over () as all_emp,
+			 sum(employee_id) over () as emp
+			 sum(employee_id) over (PARTITION BY department_name) as emp_pay_depart
+from employees			 
+-- can use partitions as window functions. This shows you an aggregate value but also with the detail of individual rows (not possible by other techniques)
+
+-- WINDOW FUNCTION
+SELECT 
+	region_id, 
+	sum(sales) OVER (PARTITION BY region_id
+) AS sum_of_sales
+FROM orders;
+-- partition shows the aggregate of total sales per region, but keeps each instance info
+
+--compare this to our regular query 
+SELECT 
+		region_id, 
+		SUM(sales) AS sum_of_sales
+FROM orders
+GROUP BY region_id;
+-- this is our only option without partition, we have to group by region_id because we have agg in select
+-- we can't see all individual info AND aggregate for a group
+
+-- OR this, we group by two columns
+SELECT 
+		region_id,
+		order_id,
+		SUM(sales) AS sum_of_sales
+FROM orders
+GROUP BY order_id, region_id
+ORDER BY region_id;
+-- BUT this shows the sum of sales for each combination or region_id and order_id so not what we want
+
+SELECT sub_category
+, product_name
+, product_cost_to_consumer,
+ROW_NUMBER() OVER (
+PARTITION BY sub_category ORDER BY
+product_cost_to_consumer DESC
+)
+FROM products
+-- Need order by so that the row_number means something --> we can get the top (or bottom) rows for our desired column
+
+SELECT sub_category
+, product_name
+, product_cost_to_consumer,
+RANK() OVER (
+PARTITION BY sub_category ORDER BY
+product_cost_to_consumer DESC
+)
+FROM products;
+-- Columns are partitioned by sub_cat (e.g. access) then ordered by price, then it is ranked. Same price means equal rank.
+-- This Rank restarts rank count inclusive of rows, i.e. 11345, not 112345 (we use Dense Rank for this)
+
+SELECT sub_category
+, product_name
+, product_cost_to_consumer,
+DENSE_RANK() OVER (
+PARTITION BY sub_category ORDER BY
+product_cost_to_consumer DESC
+)
+FROM products;
+-- This is Dense Rank exclusive or rows i.e. 112345 NOT 11345 - It doesn't skip numbers in the dense rank.
+
+WITH daily_quantity AS (
+    SELECT order_date
+    , SUM(quantity) AS total_quantity
+    FROM orders
+    WHERE date_part('year', order_date) = 2019
+    GROUP BY order_date
+    ORDER BY order_date
+)
+SELECT order_date
+, total_quantity
+, LAG(total_quantity, 1) OVER (
+    ORDER BY order_date
+) AS total_quantity_lag1
+FROM daily_quantity;
+-- gives us the same result in a new column, but for the x days, change the number in lag 
+
+WITH daily_quantity AS (
+SELECT order_date
+, SUM(quantity) AS total_quantity
+FROM orders
+WHERE date_part('year', order_date) = 2019
+GROUP BY order_date
+ORDER BY order_date
+)
+SELECT order_date
+, total_quantity
+, LEAD(total_quantity, 1) OVER (
+ORDER BY order_date
+) AS total_quantity_lag1
+FROM daily_quantity;
+-- lead is opposite of lag
