@@ -1,1 +1,45 @@
+-- Bluebikes Data
+-- See number of trips per month per year over 4 yearly data tables
+WITH 
+full_data_bb (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender) AS
+(SELECT * 
+FROM bluebikes_2016
+UNION ALL
+SELECT *
+FROM bluebikes_2017
+UNION ALL
+SELECT *
+FROM bluebikes_2018
+UNION ALL
+SELECT *
+FROM bluebikes_2019)
 
+SELECT COUNT(*), DATE_PART('month', start_time) AS month_sep, DATE_PART('year', start_time) AS year_sep
+FROM full_data_bb
+GROUP BY month_sep, year_sep
+ORDER BY year_sep, month_sep
+
+-- Compare to just one year to double check number of trips (note: id's are repeated on multiple trips, so distinct counts will give lower number of trips)
+SELECT COUNT(bike_id), DATE_PART('month', start_time) AS month_sep, DATE_PART('year', start_time) AS year_sep
+FROM bluebikes_2016
+GROUP BY month_sep, year_sep
+ORDER BY year_sep, month_sep
+
+-- Divvy Data
+WITH
+full_data_div (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender)
+SELECT *
+FROM divvybikes_2016
+UNION ALL
+SELECT *
+FROM divvybikes_2017
+UNION ALL
+SELECT *
+FROM divvybikes_2018
+UNION ALL
+SELECT *
+FROM divvybikes_2019
+-- Gender defintion is 0 = undefined, 1 = Male, 2 = Female (from bluebikes website)
+
+SELECT *
+FROM divvy_stations
