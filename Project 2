@@ -43,3 +43,153 @@ FROM divvybikes_2019
 
 SELECT *
 FROM divvy_stations
+
+--add start and end station locations to bluebikes_2019
+SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.end_station_id, bb.user_type, bb.user_birth_year, bb.user_gender, 
+ 		bb_s.latitude, bb_s.longtitude,
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb
+LEFT JOIN bluebikes_stations AS bb_s
+		ON bb.start_station_id = bb_s.id
+LEFT JOIN bluebikes_stations AS bb_e
+		ON bb.end_station_id = bb_e.id
+    
+-- or using a CTE below
+WITH 
+bb_2019 (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender, s_lat, s_long, e_lat, e_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.end_station_id, bb.user_type, bb.user_birth_year, bb.user_gender, 
+ 		bb_s.latitude, bb_s.longtitude,
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb
+LEFT JOIN bluebikes_stations AS bb_s
+		ON bb.start_station_id = bb_s.id
+LEFT JOIN bluebikes_stations AS bb_e
+		ON bb.end_station_id = bb_e.id)
+
+SELECT * FROM bb_2019
+
+WITH 
+bb_2019 (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender, s_lat, s_long, e_lat, e_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.end_station_id, bb.user_type, bb.user_birth_year, bb.user_gender, 
+ 		bb_s.latitude, bb_s.longtitude,
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb
+LEFT JOIN bluebikes_stations AS bb_s
+		ON bb.start_station_id = bb_s.id
+LEFT JOIN bluebikes_stations AS bb_e
+		ON bb.end_station_id = bb_e.id)
+
+SELECT calculate_distance(a.s_lat, a.s_long,
+						 b.e_lat, b.e_long,
+						 'K') AS dist				
+FROM bb_2019 a,
+	bb_2019 b
+-- attempting to calculate distance between start and end query
+
+WITH 
+bb_2019 (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender, s_lat, s_long, e_lat, e_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.end_station_id, bb.user_type, bb.user_birth_year, bb.user_gender, 
+ 		bb_s.latitude, bb_s.longtitude,
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb
+LEFT JOIN bluebikes_stations AS bb_s
+		ON bb.start_station_id = bb_s.id
+LEFT JOIN bluebikes_stations AS bb_e
+		ON bb.end_station_id = bb_e.id
+LIMIT 10)
+
+SELECT *, calculate_distance(a.s_lat, a.s_long,
+						 b.e_lat, b.e_long,
+						 'K') AS dist				
+FROM bb_2019 a,
+	bb_2019 b
+  
+-- separate start_station from end_station
+-- try calculating distance 
+WITH
+start_station (bike_id, start_time, end_time, start_station_id, user_type, user_birth_year, user_gender, s_lat, s_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.user_type, bb.user_birth_year, bb.user_gender,
+		bb_s.latitude, bb_s.longtitude
+FROM bluebikes_2019 AS bb
+INNER JOIN bluebikes_stations AS bb_s
+ON bb.start_station_id = bb_s.id
+LIMIT 10),
+
+end_station (end_station_id, e_lat, e_long) AS 
+(SELECT 	bb1.end_station_id, 
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb1
+INNER JOIN bluebikes_stations AS bb_e
+ON bb1.end_station_id = bb_e.id
+LIMIT 10)
+
+SELECT a.bike_id, calculate_distance(a.s_lat, a.s_long,
+						 b.e_lat, b.e_long,
+						 'K')
+FROM start_station a,
+	end_station b
+WHERE a.start_station_id != b.end_station_id
+
+-- experimetns 2/2 for calc_dist
+WITH 
+bb_2019 (bike_id, start_time, end_time, start_station_id, end_station_id, user_type, user_birth_year, user_gender, s_lat, s_long, e_lat, e_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.end_station_id, bb.user_type, bb.user_birth_year, bb.user_gender, 
+ 		bb_s.latitude, bb_s.longtitude,
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb
+INNER JOIN bluebikes_stations AS bb_s
+		ON bb.start_station_id = bb_s.id
+INNER JOIN bluebikes_stations AS bb_e
+		ON bb.end_station_id = bb_e.id
+LIMIT 10)
+
+SELECT a.bike_id, a.start_time, a.end_time, 
+		calculate_distance(a.s_lat, a.s_long,
+						 b.e_lat, b.e_long,
+						 'K') AS dist				
+FROM bb_2019 a,
+	bb_2019 b
+
+WITH
+start_station (bike_id, start_time, end_time, start_station_id, user_type, user_birth_year, user_gender, s_lat, s_long) AS 
+(SELECT bb.bike_id, bb.start_time, bb.end_time, bb.start_station_id, bb.user_type, bb.user_birth_year, bb.user_gender,
+		bb_s.latitude, bb_s.longtitude
+FROM bluebikes_2019 AS bb
+INNER JOIN bluebikes_stations AS bb_s
+ON bb.start_station_id = bb_s.id
+LIMIT 10),
+
+end_station (end_station_id, e_lat, e_long) AS 
+(SELECT 	bb1.end_station_id, 
+		bb_e.latitude, bb_e.longtitude
+FROM bluebikes_2019 AS bb1
+INNER JOIN bluebikes_stations AS bb_e
+ON bb1.end_station_id = bb_e.id
+LIMIT 10)
+
+SELECT a.bike_id, calculate_distance(a.s_lat, a.s_long,
+						 b.e_lat, b.e_long,
+						 'K')
+FROM start_station AS a,
+	end_station AS b
+WHERE a.start_station_id != b.end_station_id
+
+
+
+SELECT CALCULATE_DISTANCE(a.latitude, a.longtitude,
+						 b.latitude, b.longtitude)
+FROM bluebikes_stations a,
+	bluebikes_stations b
+INNER JOIN bluebikes_2019 AS bb1
+ON bb1.start_station_id = a.id
+INNER JOIN bluebikes_2019 AS bb2
+ON bb2.end_station_id = b.id
+WHERE a.id =  
+LIMIT 10
+
+
+SELECT *
+FROM bluebikes_stations
+LIMIT 10
+
+-- end experiment
