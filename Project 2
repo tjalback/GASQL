@@ -193,3 +193,74 @@ FROM bluebikes_stations
 LIMIT 10
 
 -- end experiment
+
+WITH
+start_station AS 
+(SELECT bb.start_station_id, 
+		bb_s.latitude, bb_s.longtitude
+	FROM bluebikes_2019 AS bb
+	INNER JOIN bluebikes_stations AS bb_s
+	ON bb.start_station_id = bb_s.id
+),
+end_station  AS 
+(	SELECT 	bb1.end_station_id, 
+	bb_e.latitude, bb_e.longtitude
+	FROM bluebikes_2019 AS bb1
+	INNER JOIN bluebikes_stations AS bb_e
+	ON bb1.end_station_id = bb_e.id
+	)
+SELECT (calculate_distance(a.latitude, a.longtitude,
+						 b.latitude, b.longtitude,
+						 'K') AS dist
+FROM start_station a,
+	end_station b
+WHERE a.start_station_id != b.end_station_id
+LIMIT 1000
+
+-- Final query used for this 
+WITH
+start_station AS 
+(SELECT bb.start_station_id, 
+		bb_s.latitude, bb_s.longtitude
+	FROM bluebikes_2019 AS bb
+	INNER JOIN bluebikes_stations AS bb_s
+	ON bb.start_station_id = bb_s.id
+),
+end_station  AS 
+(	SELECT 	bb1.end_station_id, 
+	bb_e.latitude, bb_e.longtitude
+	FROM bluebikes_2019 AS bb1
+	INNER JOIN bluebikes_stations AS bb_e
+	ON bb1.end_station_id = bb_e.id
+	)
+SELECT calculate_distance(a.latitude, a.longtitude,
+						 b.latitude, b.longtitude,
+						 'K') AS dist
+FROM start_station a,
+	end_station b
+WHERE a.start_station_id != b.end_station_id
+LIMIT 100000
+
+-- With Divvy
+WITH
+start_station AS 
+(SELECT div.start_station_id, 
+		div_s.latitude, div_s.longitude
+	FROM divvybikes_2019 AS div
+	INNER JOIN divvy_stations AS div_s
+	ON div.start_station_id = div_s.id
+),
+end_station  AS 
+(	SELECT 	div1.end_station_id, 
+	div_e.latitude, div_e.longitude
+	FROM divvybikes_2019 AS div1
+	INNER JOIN divvy_stations AS div_e
+	ON div1.end_station_id = div_e.id
+	)
+SELECT calculate_distance(a.latitude, a.longitude,
+						 b.latitude, b.longitude,
+						 'K') AS dist
+FROM start_station a,
+	end_station b
+WHERE a.start_station_id != b.end_station_id
+LIMIT 100000
