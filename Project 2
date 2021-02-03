@@ -194,33 +194,67 @@ LIMIT 10
 
 -- end experiment
 
-WITH
-start_station AS 
-(SELECT bb.start_station_id, 
-		bb_s.latitude, bb_s.longtitude
-	FROM bluebikes_2019 AS bb
-	INNER JOIN bluebikes_stations AS bb_s
-	ON bb.start_station_id = bb_s.id
-),
-end_station  AS 
-(	SELECT 	bb1.end_station_id, 
-	bb_e.latitude, bb_e.longtitude
-	FROM bluebikes_2019 AS bb1
-	INNER JOIN bluebikes_stations AS bb_e
-	ON bb1.end_station_id = bb_e.id
-	)
-SELECT (calculate_distance(a.latitude, a.longtitude,
-						 b.latitude, b.longtitude,
-						 'K') AS dist
-FROM start_station a,
-	end_station b
-WHERE a.start_station_id != b.end_station_id
-LIMIT 1000
+--experimenting with LAG
+-- CTE
+WITH 
+bb2019 (bike_id, start_station_id, end_station_id, start_time) AS
+(SELECT bike_id, start_station_id, end_station_id, start_time
+FROM bluebikes_2019
+ORDER BY bike_id, start_time
+LIMIT 10000)
 
--- Final query used for this 
+-- or do lag directly in select query (partition by bike_id, order by date to see if the end_station_id matches the next station_station_id for that bike_id)
+SELECT 
+	bike_id, start_station_id, end_station_id, start_time, LAG(end_station_id,1) OVER (PARTITION BY bike_id ORDER BY start_time) AS end_station_lag
+FROM bluebikes_2019
+LIMIT 100
+
+WITH
+lag_end
+AS (SELECT 
+	bike_id, start_station_id, end_station_id, start_time, LAG(end_station_id,1) OVER (PARTITION BY bike_id ORDER BY start_time) AS end_station_lag
+FROM bluebikes_2019
+)
+
+SELECT bike_id, (COUNT(end_station_lag) - COUNT(DISTINCT bike_id)) AS bike_relocations
+FROM lag_end
+WHERE end_station_lag != start_station_id
+GROUP BY bike_id
+ORDER BY bike_relocations DESC
+
+-- this give number of relocations - 1 (because first trip has no previous end_station_id) by bike_id ordered by desc number relocations
+
+-- and for Divvy
+WITH
+lag_end
+AS (SELECT 
+	bikeid, start_station_id, end_station_id, start_time, LAG(end_station_id,1) OVER (PARTITION BY bikeid ORDER BY start_time) AS end_station_lag
+FROM divvybikes_2019)
+
+SELECT bikeid, COUNT(end_station_lag) AS bike_relocations
+FROM lag_end
+WHERE end_station_lag != start_station_id 
+GROUP BY bikeid
+ORDER BY bike_relocations DESC
+
+-- try separating total relocation counts per month
+WITH
+lag_end
+AS (SELECT 
+	bikeid, start_station_id, end_station_id, start_time, LAG(end_station_id,1) OVER (PARTITION BY bikeid ORDER BY start_time) AS end_station_lag
+FROM divvybikes_2019
+   limit 100)
+
+SELECT DATE_PART('month', start_time) AS month_sep, COUNT(end_station_lag) AS bike_relocations 
+FROM lag_end
+WHERE end_station_lag != start_station_id 
+GROUP BY month_sep
+ORDER BY month_sep
+
+--Q6 try trip distance by gender (compare male and female for both companies)
 WITH
 start_station AS 
-(SELECT bb.start_station_id, 
+(SELECT bb.start_station_id, bb.user_gender,
 		bb_s.latitude, bb_s.longtitude
 	FROM bluebikes_2019 AS bb
 	INNER JOIN bluebikes_stations AS bb_s
@@ -238,29 +272,7 @@ SELECT calculate_distance(a.latitude, a.longtitude,
 						 'K') AS dist
 FROM start_station a,
 	end_station b
-WHERE a.start_station_id != b.end_station_id
-LIMIT 100000
-
--- With Divvy
-WITH
-start_station AS 
-(SELECT div.start_station_id, 
-		div_s.latitude, div_s.longitude
-	FROM divvybikes_2019 AS div
-	INNER JOIN divvy_stations AS div_s
-	ON div.start_station_id = div_s.id
-),
-end_station  AS 
-(	SELECT 	div1.end_station_id, 
-	div_e.latitude, div_e.longitude
-	FROM divvybikes_2019 AS div1
-	INNER JOIN divvy_stations AS div_e
-	ON div1.end_station_id = div_e.id
-	)
-SELECT calculate_distance(a.latitude, a.longitude,
-						 b.latitude, b.longitude,
-						 'K') AS dist
-FROM start_station a,
-	end_station b
-WHERE a.start_station_id != b.end_station_id
-LIMIT 100000
+WHERE a.start_station_id != b.end_station_id AND a.user_gender = 2
+LIMIT 10000
+-- 1 is male
+-- 2 is female
