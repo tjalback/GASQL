@@ -1,0 +1,33 @@
+-- FOR CITIBIKE bike share data, answer a few questions accross a few years worth of data
+
+WITH all_citi as (SELECT user_type, gender, start_station_id, birth_year
+FROM citibike_2016
+UNION ALL
+SELECT user_type, gender, start_station_id, birth_year
+FROM citibike_2017
+UNION ALL
+SELECT user_type, gender, start_station_id, birth_year
+FROM citibike_2018
+UNION ALL
+SELECT user_type, gender, start_station_id, birth_year
+FROM citibike_2019)
+
+-- SELECT COUNT(user_type)
+-- FROM all_citi
+-- WHERE user_type ILIKE 'Subscriber'
+
+-- SELECT avg(birth_year)
+-- FROM all_citi
+-- WHERE gender = 2
+
+-- SELECT count(start_station_id) as count_station, start_station_id
+-- FROM all_citi
+-- GROUP BY start_station_id
+-- ORDER BY count_station DESC
+-- -- 3186
+
+-- probably need a join here, but searching directly for the station_id we can get the station name
+
+SELECT * 
+FROM citibike_stations
+WHERE id = 3186
