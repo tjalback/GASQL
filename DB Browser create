@@ -1,0 +1,28 @@
+-- the code below are examples of creating a table and inserting row with new values added in the columns you specify
+
+CREATE TABLE if not exists my_dates ( 
+        my_timestamp varchar(40), 
+        my_date date,
+		my_time varchar(20),
+		my_boolean integer);
+		
+INSERT INTO films('code', 'title', 'did') VALUES ('T_601', 'Did he actually do it?', 1)
+
+
+-- With primary key below, the system must have unique entries for id
+
+CREATE TABLE if not exists Person_with_PK (
+        id SERIAL PRIMARY KEY, 
+        name varchar(40), 
+        dob date );
+		
+INSERT INTO Person_with_PK('id', 'name', 'dob') VALUES (3, 'Trev', '14-07-1948')
+
+CREATE TABLE if not exists movie (
+			name varchar(40) NOT NULL UNIQUE,
+			gross_income integer CHECK(gross_income >= 0),
+			ID serial PRIMARY KEY);
+      
+-- first column can't be empty or duplicated,
+-- second column is income must be positive (not negative) -- This is a constraint using 'Check'
+-- Last column is the primary key
