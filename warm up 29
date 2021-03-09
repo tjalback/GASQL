@@ -1,0 +1,26 @@
+CREATE TABLE passengers ( 
+        passenger_id varchar(40) PRIMARY KEY,
+        passenger_name varchar(100) NOT NULL
+);
+CREATE TABLE flights ( 
+        flight_id varchar(40) PRIMARY KEY,
+        departure_time datetime NOT NULL,
+    	departure_airport varchar(255) NOT NULL,
+    	arrival_airport varchar(255) NOT NULL, 
+		passenger_id varchar(40) REFERENCES passengers(passenger_id)
+);
+CREATE TABLE airports ( 
+        airport_id varchar(40) PRIMARY KEY,
+        airport_name varchar(255) NOT NULL
+);
+CREATE TABLE regions ( 
+        region_id varchar(40) PRIMARY KEY,
+        region_name varchar(255) NOT NULL
+);
+
+drop table airports;
+drop table flights;
+drop table passengers;
+drop table regions;
+
+-- create the relationships for the ERD 
