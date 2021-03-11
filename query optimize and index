@@ -1,0 +1,34 @@
+CREATE INDEX if not exists pet_age_idx ON Pet (age);
+
+EXPLAIN QUERY PLAN 
+SELECT * 
+FROM Pet
+WHERE age > 9
+ORDER BY pet.id ASC
+
+-- this creates an index on pet age
+
+CREATE INDEX if not exists pet_id_idx ON Pet (id);
+
+EXPLAIN QUERY PLAN 
+SELECT * 
+FROM Pet
+WHERE age > 9;
+-- a new index on pet id
+
+CREATE INDEX if not exists pet_age_and_breed_idx ON Pet (age, breed);
+
+EXPLAIN QUERY PLAN 
+SELECT * 
+FROM Pet
+WHERE age > 9 AND breed = 'Dog'
+-- can add index on multiple columns
+
+CREATE INDEX if not exists pet_breed_age_idx ON Pet (breed,age);
+CREATE INDEX if not exists pet_age_idx ON Pet (age);
+
+EXPLAIN QUERY PLAN 
+SELECT * 
+FROM Pet
+WHERE age > 9 OR breed = 'Dog'
+-- when using OR, it gives a nested output based on the individual indexes created
